@@ -6,3 +6,4 @@ Museum and Nature Center Dataset: https://www.kaggle.com/imls/museum-directory
 Some basic Analysis and Graphs:
 
 ## Museums by Type
+![](image/Museum_type.jpg)
