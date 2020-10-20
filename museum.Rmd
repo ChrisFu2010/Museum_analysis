@@ -1,0 +1,171 @@
+---
+title: "Analysis of Museums and Nature Centers in US"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r data, message=FALSE}
+
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(tidyr)
+library(plotrix)
+
+```
+## Data Exploration
+
+```{r load, message=FALSE}
+# Load file as data frame
+museums_df= read.csv("museum.csv")
+
+```
+
+```{r inspect, message=FALSE}
+# Inspect data frame
+head(museums_df)
+colnames(museums_df)
+summary(museums_df)
+nrow(museums_df)
+```
+
+## Museums by Type
+
+```{r barplot, message=FALSE}
+# Create and print bar plot by type
+bar <- ggplot(museums_df, aes(Museum.Type))+geom_bar()+
+scale_x_discrete(labels=scales::wrap_format(7))
+
+bar
+
+```
+
+```{r barplot_museum, message=FALSE}
+# Create and print bar plot by museum vs non-museum
+museum_class <- ggplot(data=museums_df , aes(Is.Museum))+
+  geom_bar(aes(fill=Is.Museum))+
+  scale_x_discrete(labels=c("FALSE" = "Non-Museum", "TRUE"="Museum"))+
+  scale_fill_discrete(labels=c("False" = "Non-museum","True"="Museum"))
+museum_class
+
+
+```
+
+```{r barplot_type, message=FALSE}
+# Filter data frame to select states
+museums_states <- museums_df  %>%
+  filter( State..Administrative.Location. %in% c('AK','NY','CA'))
+
+museums_states
+museum_facet <- ggplot(data=museums_states , aes(Is.Museum))+
+  geom_bar(aes(fill=Is.Museum))+
+  scale_x_discrete(labels=c("False" = "Non-Museum", "True"="Museum"))+
+  facet_grid(rows = vars(State..Administrative.Location.))
+
+museum_facet
+
+
+# Create and print bar plot with facets
+
+
+```
+
+```{r barplot_stack, message=FALSE}
+# Create and print stacked bar plot
+museum_stacked <- ggplot(museums_df, aes(factor(Region.Code..AAM.)))+ 
+  geom_bar(aes(fill=Is.Museum),position = "fill")+
+  scale_x_discrete(labels=c("1" = "New England", "2"="Mid-Atlantic","3"="Southeastern","4"="Midwest","5"="Mountain Plains","6"="Wstern"))+
+  scale_fill_discrete(labels=c("False" = "Non-museum","True"="Museum"))+
+  labs(x='Museum by Regions', y="Percentage of Total")+
+  scale_y_continuous(labels = scales::percent_format()) 
+  
+museum_stacked
+#bar <- ggplot(museums_df, aes(Museum.Type))+geom_bar()+
+#scale_x_discrete(labels=scales::wrap_format(7))
+  
+  
+
+
+```
+
+## Museums by Revenue
+
+```{r process, message=FALSE}
+# Filter data frame
+museums_revenue_df<- museums_df %>% 
+  distinct(Legal.Name, .keep_all =T) %>%
+  filter(Annual.Revenue>0)
+
+# Filter for only small museums
+museums_revenue_small_df<- museums_revenue_df %>% 
+  filter(Annual.Revenue<1000000)
+
+# Filter for only large museums
+museums_revenue_large_df<- museums_revenue_df %>% 
+  filter(Annual.Revenue>1000000000)
+
+# print(max(museums_revenue_df$Annual.Revenue))
+# museums_revenue_df %>% 
+#   filter(Annual.Revenue==max(Annual.Revenue))
+```
+
+```{r histogram, message=FALSE}
+# Create and print histogram
+revenue_histogram <- ggplot(data=museums_revenue_small_df, aes(Annual.Revenue))+
+  geom_histogram(binwidth = 20000, fill='lightblue')+
+  scale_x_continuous(labels=scales::dollar_format())
+
+revenue_histogram
+
+
+```
+
+```{r boxplot, message=FALSE}
+# Create and print boxplot
+revenue_boxplot <- ggplot(museums_revenue_large_df, aes(x=factor(Region.Code..AAM.), y=Annual.Revenue))+
+  geom_boxplot(fill='lightblue')+
+  scale_x_discrete(labels=c("1" = "New England", "2"="Mid-Atlantic","3"="Southeastern","4"="Midwest","5"="Mountain Plains","6"="Wstern"))+
+  coord_cartesian(ylim = c(1e9, 3e10))+
+  scale_y_continuous(labels = function(x) paste0("$", x/1e9, "B"))
+revenue_boxplot
+
+```
+
+```{r mean, message=FALSE}
+# Create and print bar plot with means
+
+revenue_barplot  <- ggplot(museums_revenue_df, aes(x=factor(Region.Code..AAM.), y=Annual.Revenue))+
+  geom_bar(stat='summary', fun='mean',fill='lightblue')+
+  scale_x_discrete(labels=c("1" = "New England", "2"="Mid-Atlantic","3"="Southeastern","4"="Midwest","5"="Mountain Plains","6"="Wstern"))+
+  scale_y_continuous(labels = function(x) paste0("$", x/1e9, "B"))+
+  labs(x='Museum by Region', y='Average Revenue')
+revenue_barplot 
+
+```
+
+```{r mean_errorbar, message=FALSE}
+# Calculate means and standard errors
+museums_error_df <- museums_revenue_df %>%
+  group_by(Region.Code..AAM.) %>%
+  summarize(
+    Mean.Revenue = mean(Annual.Revenue), 
+    Mean.SE = std.error(Annual.Revenue)) %>%
+  mutate(
+    SE.Min = Mean.Revenue - Mean.SE, 
+    SE.Max = Mean.Revenue + Mean.SE)
+
+museums_error_df
+
+# Create and print bar plot with means and standard errors
+revenue_errorbar  <- ggplot(museums_error_df, aes(x=factor(Region.Code..AAM.), y=Mean.Revenue))+
+  geom_bar(stat='identity',fill='lightblue')+
+  scale_x_discrete(labels=c("1" = "New England", "2"="Mid-Atlantic","3"="Southeastern","4"="Midwest","5"="Mountain Plains","6"="Wstern"))+
+  scale_y_continuous(labels = function(x) paste0("$", x/1e9, "B"))+
+  geom_errorbar(aes(ymin=SE.Min, ymax=SE.Max, width=0.2))+
+  labs(x='Museum by Region', y='Average Revenue with Standard Error')
+  
+revenue_errorbar 
+
+```
+
