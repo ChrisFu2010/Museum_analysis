@@ -3,6 +3,7 @@ Analysis of museum dataset in US. The data file includes basic information about
 
 Museum and Nature Center Dataset: https://www.kaggle.com/imls/museum-directory
 
+
 Some basic Analysis and Graphs:
 
 ## Museums by Type
@@ -27,3 +28,4 @@ Some basic Analysis and Graphs:
 ## Museum Income Annual Revenue by Region with Boxplot
 
 ![](image/muse_by_region_revenue.png)
+
